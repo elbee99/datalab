@@ -119,6 +119,17 @@ export function createNewSamples(newSampleDatas, copyFromItemIds = null) {
   });
 }
 
+export function getStats() {
+  return fetch_get(`${API_URL}/info/stats`)
+    .then(function (response_json) {
+      store.commit("setStats", response_json.counts);
+    })
+    .catch((error) => {
+      console.error("Error when fetching stats");
+      throw error;
+    });
+}
+
 export function getSampleList() {
   return fetch_get(`${API_URL}/samples/`)
     .then(function (response_json) {
