@@ -145,6 +145,7 @@ def get_samples_summary(
         "item_id": 1,
         "name": 1,
         "chemform": 1,
+        "nblocks": {"$size": "$display_order"},
         "characteristic_chemical_formula": 1,
         "type": 1,
         "date": 1,
@@ -165,7 +166,7 @@ def get_samples_summary(
             {"$lookup": creators_lookup()},
             {"$lookup": collections_lookup()},
             {"$project": _project},
-            {"$sort": {"_id": -1}},
+            {"$sort": {"date": -1}},
         ]
     )
 
@@ -219,6 +220,21 @@ def collections_lookup() -> Dict:
         ],
         "as": "collections",
     }
+
+
+def _check_collections(sample_dict):
+    if sample_dict.get("collections", []):
+        for ind, c in enumerate(sample_dict.get("collections", [])):
+            query = {}
+            query.update(c)
+            if "immutable_id" in c:
+                query["_id"] = ObjectId(query.pop("immutable_id"))
+            result = flask_mongo.db.collections.find_one({**query, **get_default_permissions()})
+            if not result:
+                raise ValueError(f"No collection found matching request: {c}")
+            sample_dict["collections"][ind] = {"immutable_id": result["_id"]}
+
+    return sample_dict.get("collections", []) or []
 
 
 def get_samples():
@@ -346,6 +362,19 @@ def _create_sample(sample_dict: dict, copy_from_item_id: Optional[str] = None) -
                     ]
 
             sample_dict = copied_doc
+
+    try:
+        # If passed collection data, dereference it and check if the collection exists
+        sample_dict["collections"] = _check_collections(sample_dict)
+    except ValueError as exc:
+        return (
+            dict(
+                status="error",
+                message=f"Unable to create new item {sample_dict['item_id']!r} inside non-existent collection(s): {exc}",
+                item_id=sample_dict["item_id"],
+            ),
+            401,
+        )
 
     sample_dict.pop("refcode", None)
     type = sample_dict["type"]
@@ -530,7 +559,17 @@ def delete_sample():
 delete_sample.methods = ("POST",)  # type: ignore
 
 
-def get_item_data(item_id, load_blocks=True):
+def get_item_data(item_id, load_blocks: bool = False):
+    """Generates a JSON response for the item with the given `item_id`,
+    additionally resolving relationships to files and other items.
+
+    Parameters:
+       load_blocks: Whether to regenerate any data blocks associated with this
+           sample (i.e., create the Python object corresponding to the block and
+           call its render function).
+
+    """
+
     # retrieve the entry from the database:
     cursor = flask_mongo.db.items.aggregate(
         [
@@ -546,15 +585,19 @@ def get_item_data(item_id, load_blocks=True):
     except IndexError:
         doc = None
 
-    if not doc or (not current_user.is_authenticated and doc["type"] == "starting_materials"):
+    if not doc or (
+        not current_user.is_authenticated
+        and not CONFIG.TESTING
+        and not doc["type"] == "starting_materials"
+    ):
         return (
             jsonify(
                 {
                     "status": "error",
-                    "message": f"Authorization required to attempt to get sample with {item_id=} from the database.",
+                    "message": f"No matching item {item_id=} with current authorization.",
                 }
             ),
-            401,
+            404,
         )
 
     # determine the item type and validate according to the appropriate schema
@@ -653,7 +696,7 @@ def save_item():
     updated_data = request_json["data"]
 
     # These keys should not be updated here and cannot be modified by the user through this endpoint
-    for k in ("_id", "file_ObjectIds", "creators", "creator_ids", "item_id"):
+    for k in ("_id", "file_ObjectIds", "creators", "creator_ids", "item_id", "relationships"):
         if k in updated_data:
             del updated_data[k]
 
@@ -678,6 +721,19 @@ def save_item():
             ),
             400,
         )
+
+    if updated_data.get("collections", []):
+        try:
+            updated_data["collections"] = _check_collections(updated_data)
+        except ValueError as exc:
+            return (
+                dict(
+                    status="error",
+                    message=f"Cannot update {item_id!r} with missing collections {updated_data['collections']!r}: {exc}",
+                    item_id=item_id,
+                ),
+                401,
+            )
 
     item_type = item["type"]
     item.update(updated_data)
@@ -713,7 +769,7 @@ def save_item():
             400,
         )
 
-    return jsonify(status="success"), 200
+    return jsonify(status="success", last_modified=updated_data["last_modified"]), 200
 
 
 save_item.methods = ("POST",)  # type: ignore

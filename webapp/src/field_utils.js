@@ -35,7 +35,7 @@ export function createComputedSetterForItemField(item_field) {
       console.log(`comp setter called for '${item_field}' with value: '${value}'`);
       store.commit("updateItemData", {
         item_id: this.item_id,
-        block_data: { [item_field]: value ? value : null },
+        item_data: { [item_field]: value ? value : null },
       });
       //}, 500),
     },
