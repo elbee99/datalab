@@ -166,6 +166,18 @@ export function getSampleList() {
     });
 }
 
+export function getCollectionSampleList(collection_id) {
+  return fetch_get(`${API_URL}/collections/${collection_id}`)
+    .then(function (response_json) {
+      store.commit("setCollectionSampleList", collection_id, response_json.child_items);
+    })
+    .catch((error) => {
+      console.error("Error when fetching collection sample list");
+      console.error(error);
+      throw error;
+    });
+}
+
 export function getCollectionList() {
   return fetch_get(`${API_URL}/collections/`)
     .then(function (response_json) {
