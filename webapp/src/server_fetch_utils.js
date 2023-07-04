@@ -268,6 +268,15 @@ export function deleteCollection(collection_id, collection_summary) {
     .catch((error) => alert("Collection delete failed for " + collection_id + ": " + error));
 }
 
+export function deletSampleFromCollection(collection_id, collection_summary) {
+  return fetch_delete(`${API_URL}/collections/${collection_id}`)
+    .then(function (response_json) {
+      console.log("delete successful" + response_json);
+      store.commit("deleteFromCollectionList", collection_summary);
+    })
+    .catch((error) => alert("Collection delete failed for " + collection_id + ": " + error));
+}
+
 export async function getItemData(item_id) {
   return fetch_get(`${API_URL}/get-item-data/${item_id}`)
     .then((response_json) => {
@@ -289,7 +298,7 @@ export async function getCollectionData(collection_id) {
   return fetch_get(`${API_URL}/collections/${collection_id}`)
     .then((response_json) => {
       console.log("get collection", response_json);
-      store.commit("createCollectionData", {
+      store.commit("setCollectionData", {
         collection_id: collection_id,
         data: response_json.data,
         child_items: response_json.child_items,
@@ -345,6 +354,25 @@ export function addABlock(item_id, block_type, index = null) {
       return response_json.new_block_obj.block_id;
     })
     .catch((error) => console.error("Error in addABlock:", error));
+  return block_id_promise;
+}
+
+export function addACollectionBlock(collection_id, block_type, index = null) {
+  console.log("addACollectionBlock called with", collection_id, block_type);
+  var block_id_promise = fetch_post(`${API_URL}/add-collection-data-block/`, {
+    collection_id: collection_id,
+    block_type: block_type,
+    index: index,
+  })
+    .then(function (response_json) {
+      store.commit("addACollectionBlock", {
+        collection_id: collection_id,
+        new_block_obj: response_json.new_block_obj,
+        new_block_insert_index: response_json.new_block_insert_index,
+      });
+      return response_json.new_block_obj.block_id;
+    })
+    .catch((error) => console.error("Error in addACollectionBlock:", error));
   return block_id_promise;
 }
 

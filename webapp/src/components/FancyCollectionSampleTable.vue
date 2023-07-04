@@ -62,10 +62,12 @@ import FormattedItemName from "@/components/FormattedItemName";
 import ChemicalFormula from "@/components/ChemicalFormula";
 import Creators from "@/components/Creators";
 // eslint-disable-next-line no-unused-vars
-import { getCollectionSampleList } from "@/server_fetch_utils.js";
 import { GRAVATAR_STYLE, itemTypes } from "@/resources.js";
 
 export default {
+  props: {
+    collection_id: String,
+  },
   data() {
     return {
       isSampleFetchError: false,
@@ -85,12 +87,9 @@ export default {
       searchValue: "",
     };
   },
-  props: {
-    collection_id: String,
-  },
   computed: {
     samples() {
-      return this.$store.state.all_collection_children[this.collection_id];
+      return this.$store.state.this_collection_children;
     },
   },
   methods: {

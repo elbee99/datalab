@@ -49,7 +49,7 @@
 <script>
 import { getCollectionList, deleteCollection } from "@/server_fetch_utils.js";
 import FormattedItemName from "@/components/FormattedItemName";
-import crypto from "crypto";
+import Creators from "@/components/Creators";
 import { GRAVATAR_STYLE } from "@/resources.js";
 
 export default {
@@ -65,10 +65,6 @@ export default {
     },
   },
   methods: {
-    md5(value) {
-      // Returns the MD5 hash of the given string.
-      return crypto.createHash("md5").update(value).digest("hex");
-    },
     goToEditPage(collection_id) {
       this.$router.push(`/collections/${collection_id}`);
     },
@@ -96,6 +92,7 @@ export default {
   },
   components: {
     FormattedItemName,
+    Creators,
   },
 };
 </script>

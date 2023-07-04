@@ -70,7 +70,7 @@
 
 <script>
 import CollectionInformation from "@/components/CollectionInformation";
-import { getCollectionData, saveCollection } from "@/server_fetch_utils";
+import { getCollectionData, saveCollection, addACollectionBlock } from "@/server_fetch_utils";
 import tinymce from "tinymce/tinymce";
 import { blockTypes, itemTypes } from "@/resources.js";
 import { API_URL } from "@/resources.js";
@@ -79,10 +79,26 @@ export default {
   data() {
     return {
       collection_id: this.$route.params.id,
-      item_data_loaded: false,
+      data_loaded: false,
+      isMenuDropdownVisible: false,
+      isLoadingNewBlock: false,
     };
   },
   methods: {
+    async newBlock(event, blockType, index = null) {
+      this.isMenuDropdownVisible = false;
+      this.isLoadingNewBlock = true;
+      this.$refs.blockLoadingIndicator.scrollIntoView({
+        behavior: "smooth",
+      });
+      var block_id = await addACollectionBlock(this.item_id, blockType, index);
+      // close the dropdown and scroll to the new block
+      var new_block_el = document.getElementById(block_id);
+      this.isLoadingNewBlock = false;
+      new_block_el.scrollIntoView({
+        behavior: "smooth",
+      });
+    },
     saveCollectionData() {
       // trigger the mce save so that they update the store with their content
       console.log("save clicked!");
@@ -115,13 +131,6 @@ export default {
     lastModified() {
       // if (!this.item_data.last_modified) { return "" }
       let item_date = this.collection_data.last_modified;
-      if (item_date == null) {
-        item_date = this.collection_data.date;
-      }
-      if (item_date == null) {
-        return "Unknown";
-      }
-
       const save_date = new Date(item_date);
       return save_date.toLocaleString("en-GB");
     },

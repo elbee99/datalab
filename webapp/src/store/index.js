@@ -11,6 +11,9 @@ export default createStore({
     all_collection_data: {},
     all_collection_children: {},
     all_collection_parents: {},
+    this_collection_data: {},
+    this_collection_children: [],
+    this_collection_parents: [],
     sample_list: [],
     starting_material_list: [],
     collection_list: [],
@@ -76,13 +79,15 @@ export default createStore({
       state.all_item_parents[payload.item_id] = payload.parent_items;
       state.saved_status_items[payload.item_id] = true;
     },
-    createCollectionData(state, payload) {
+    setCollectionData(state, payload) {
       // payload should have the following fields:
       // collection_id, data, child_items
       // Object.assign(state.all_sample_data[payload.item_data], payload.item_data)
+      state.this_collection_id = payload.collection_id;
+      state.this_collection_data = payload.data;
       state.all_collection_data[payload.collection_id] = payload.data;
-      state.all_collection_children[payload.collection_id] = payload.child_items;
-      state.all_collection_parents[payload.collection_id] = [];
+      state.this_collection_children = payload.child_items;
+      state.this_collection_parents = [];
       state.saved_status_collections[payload.collection_id] = true;
     },
     updateFiles(state, files_data) {
@@ -129,6 +134,33 @@ export default createStore({
       // if new_block_insert_index is None, then block is inserted at the end
       else {
         state.all_item_data[item_id]["display_order"].push(new_block_id);
+      }
+    },
+    addACollectionBlock(state, { collection_id, new_block_obj, new_block_insert_index }) {
+      // payload: item_id, new_block_obj, new_display_order
+
+      // I should actually throw an error if this fails!
+      console.assert(
+        collection_id == new_block_obj.collection_id,
+        "The block has a different collection_id (%s) than the collection_id provided to addACollectionBlock (%s)",
+        collection_id,
+        new_block_obj.collection_id
+      );
+      console.log(
+        `addACollectionBlock called with: ${collection_id}, ${new_block_obj}, ${new_block_insert_index}`
+      );
+      let new_block_id = new_block_obj.block_id;
+      state.all_collection_data[collection_id]["blocks_obj"][new_block_id] = new_block_obj;
+      if (new_block_insert_index) {
+        state.all_collection_data[collection_id]["display_order"].splice(
+          new_block_insert_index,
+          0,
+          new_block_id
+        );
+      }
+      // if new_block_insert_index is None, then block is inserted at the end
+      else {
+        state.all_collection_data[collection_id]["display_order"].push(new_block_id);
       }
     },
     updateBlockData(state, payload) {
