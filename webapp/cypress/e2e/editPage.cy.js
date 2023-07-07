@@ -37,7 +37,7 @@ describe("Edit Page", () => {
 
     cy.findByText("editable_sample");
     cy.findByText("This is a sample name");
-    cy.get("tr>td").eq(6).contains(0); // 0 blocks are present
+    cy.get("tr>td").eq(7).contains(0); // 0 blocks are present
   });
 
   it("Adds a second valid sample, to use as a component", () => {
@@ -257,7 +257,7 @@ describe("Edit Page", () => {
     cy.contains("Unsaved changes").should("not.exist");
 
     cy.findByText("Home").click();
-    cy.get("[data-testid=sample-table] tr:nth-of-type(3) > td:nth-of-type(7)").contains(2); // 2 blocks are present
+    cy.get("[data-testid=sample-table] tr:nth-of-type(3) > td:nth-of-type(8)").contains(2); // 2 blocks are present
   });
 
   it("cleanup: delete the samples", () => {
