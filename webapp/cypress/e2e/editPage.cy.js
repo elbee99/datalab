@@ -29,10 +29,10 @@ describe("Edit Page", () => {
   it("Adds a valid sample", () => {
     cy.findByText("Add an item").click();
     cy.findByText("Add new sample").should("exist");
-    cy.findByLabelText("Sample ID:").type("editable_sample");
+    cy.findByLabelText("ID:").type("editable_sample");
     cy.findByLabelText("Date Created:").type("1990-01-07T00:00");
 
-    cy.findByLabelText("Sample Name:").type("This is a sample name");
+    cy.findByLabelText("Name:").type("This is a sample name");
     cy.contains("Submit").click();
 
     cy.findByText("editable_sample");
@@ -43,16 +43,16 @@ describe("Edit Page", () => {
   it("Adds a second valid sample, to use as a component", () => {
     cy.findByText("Add an item").click();
     cy.findByText("Add new sample");
-    cy.findByLabelText("Sample ID:").type("component1");
-    cy.findByLabelText("Sample Name:").type("This is a component");
+    cy.findByLabelText("ID:").type("component1");
+    cy.findByLabelText("Name:").type("This is a component");
     cy.contains("Submit").click();
   });
 
   it("Adds a third valid sample, to use as a component", () => {
     cy.findByText("Add an item").click();
     cy.findByText("Add new sample");
-    cy.findByLabelText("Sample ID:").type("component2");
-    cy.findByLabelText("Sample Name:").type("This is another component");
+    cy.findByLabelText("ID:").type("component2");
+    cy.findByLabelText("Name:").type("This is another component");
     cy.contains("Submit").click();
   });
 

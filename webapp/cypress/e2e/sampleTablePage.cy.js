@@ -13,7 +13,7 @@ function createSample(sample_id, name = null, date = null) {
   cy.findByText("Add new sample").should("exist");
   cy.findByLabelText("ID:").type(sample_id);
   if (name) {
-    cy.findByLabelText("Sample Name:").type(name);
+    cy.findByLabelText("Name:").type(name);
   }
   if (date) {
     cy.findByLabelText("Date Created:").type(date);
@@ -86,7 +86,7 @@ describe("Sample table page", () => {
     cy.findByLabelText("ID:").type("12345678910");
     cy.findByLabelText("Date Created:").type("1990-01-07T00:00");
 
-    cy.findByLabelText("Sample Name:").type("This is a sample name");
+    cy.findByLabelText("Name:").type("This is a sample name");
     cy.contains("Submit").click();
 
     // check that the sample table is correctly populated
