@@ -389,6 +389,7 @@ def test_create_cell(client, default_cell):
     assert response.status_code == 201, response.json
     assert response.json["status"] == "success"
 
+
 @pytest.mark.dependency(depends=["test_create_cell"])
 def test_create_collections(client, default_collection):
 
@@ -418,13 +419,13 @@ def test_create_collections(client, default_collection):
 
     data = json.loads(new_collection.json())
     data.update(
-            {
-                "starting_members": [
-                    {"item_id": "copy_of_complicated_cell"},
-                    {"item_id": "test_cell"},
-                    ]
-                }
-            )
+        {
+            "starting_members": [
+                {"item_id": "copy_of_complicated_cell"},
+                {"item_id": "test_cell"},
+            ]
+        }
+    )
     response = client.put("/collections/", json={"data": data})
     assert response.status_code == 201, response.json
     assert response.json["status"] == "success"

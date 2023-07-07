@@ -54,7 +54,7 @@ def get_graph_cy_format(item_id: Optional[str] = None):
                 node_collections.add(relationship["immutable_id"])
                 continue
 
-            if relationship.get("relation") != "parent":
+            if relationship.get("relation") not in ("parent", "is_part_of"):
                 continue
 
             target = document["item_id"]
