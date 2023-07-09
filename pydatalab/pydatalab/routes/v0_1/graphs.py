@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Set
 
 from flask import jsonify
 
@@ -13,7 +13,7 @@ def get_graph_cy_format(item_id: Optional[str] = None):
             get_default_permissions(user_only=False),
             projection={"item_id": 1, "name": 1, "type": 1, "relationships": 1},
         )
-        node_ids = {document["item_id"] for document in all_documents}
+        node_ids: Set[str] = {document["item_id"] for document in all_documents}
         all_documents.rewind()
 
     else:
@@ -27,24 +27,30 @@ def get_graph_cy_format(item_id: Optional[str] = None):
             )
         )
 
-        node_ids = {document["item_id"] for document in all_documents}
+        node_ids = {document["item_id"] for document in all_documents} | {
+            relationship["item_id"]
+            for document in all_documents
+            for relationship in document.get("relationships", [])
+        }
         if len(node_ids) > 1:
+            query = [{"item_id": id} for id in node_ids if id != item_id]
+            # query.extend([{"relationships.item_id": id} for id in node_ids if id != item_id])
             next_shell = flask_mongo.db.items.find(
                 {
-                    "$or": [
-                        *[{"item_id": id} for id in node_ids if id != item_id],
-                        *[{"relationships.item_id": id} for id in node_ids if id != item_id],
-                    ],
+                    "$or": query,
                     **get_default_permissions(user_only=False),
                 },
                 projection={"item_id": 1, "name": 1, "type": 1, "relationships": 1},
             )
 
-            node_ids = node_ids | {document["item_id"] for document in next_shell}
             all_documents.extend(next_shell)
+            node_ids = node_ids | {document["item_id"] for document in all_documents}
 
     nodes = []
     edges = []
+
+    # Collect the elements that have already been added to the graph, to avoid duplication
+    drawn_elements = set()
     for document in all_documents:
 
         node_collections = set()
@@ -92,27 +98,32 @@ def get_graph_cy_format(item_id: Optional[str] = None):
             source = relationship["item_id"]
             if source not in node_ids:
                 continue
-            edges.append(
+            edge_id = f"{source}->{target}"
+            if edge_id not in drawn_elements:
+                drawn_elements.add(edge_id)
+                edges.append(
+                    {
+                        "data": {
+                            "id": edge_id,
+                            "source": source,
+                            "target": target,
+                            "value": 1,
+                        }
+                    }
+                )
+
+        if document["item_id"] not in drawn_elements:
+            drawn_elements.add(document["item_id"])
+            nodes.append(
                 {
                     "data": {
-                        "id": f"{source}->{target}",
-                        "source": source,
-                        "target": target,
-                        "value": 1,
+                        "id": document["item_id"],
+                        "name": document["name"],
+                        "type": document["type"],
+                        "collections": list(node_collections),
                     }
                 }
             )
-
-        nodes.append(
-            {
-                "data": {
-                    "id": document["item_id"],
-                    "name": document["name"],
-                    "type": document["type"],
-                    "collections": list(node_collections),
-                }
-            }
-        )
 
     # We want to filter out all the starting materials that don't have relationships since there are so many of them:
     whitelist = {edge["data"]["source"] for edge in edges}

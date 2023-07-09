@@ -76,7 +76,9 @@ def test_simple_graph(client):
     assert len(graph["edges"]) == 3
 
     graph = client.get("/item-graph/child_1").json
-    # These values are currently incorrect: really want to traverse the graph but need to
-    # resolve relationships first
-    assert len(graph["nodes"]) == 1
-    assert len(graph["edges"]) == 0
+    assert len(graph["nodes"]) == 2
+    assert len(graph["edges"]) == 1
+
+    graph = client.get("/item-graph/parent").json
+    assert len(graph["nodes"]) == 4
+    assert len(graph["edges"]) == 3
