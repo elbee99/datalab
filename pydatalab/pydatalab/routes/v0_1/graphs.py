@@ -51,7 +51,38 @@ def get_graph_cy_format(item_id: Optional[str] = None):
         for relationship in document.get("relationships", []):
             # only considering child-parent relationships:
             if relationship.get("type") == "collections":
-                node_collections.add(relationship["immutable_id"])
+                collection_data = flask_mongo.db.collections.find_one(
+                    {
+                        "_id": relationship["immutable_id"],
+                        **get_default_permissions(user_only=False),
+                    },
+                    projection={"collection_id": 1, "title": 1, "type": 1},
+                )
+                if collection_data:
+                    if relationship["immutable_id"] not in node_collections:
+                        nodes.append(
+                            {
+                                "data": {
+                                    "id": f'Collection: {collection_data["collection_id"]}',
+                                    "name": collection_data["title"],
+                                    "type": collection_data["type"],
+                                    "shape": "triangle",
+                                }
+                            }
+                        )
+                        node_collections.add(relationship["immutable_id"])
+                    source = f'Collection: {collection_data["collection_id"]}'
+                    target = document.get("item_id")
+                    edges.append(
+                        {
+                            "data": {
+                                "id": f"{source}->{target}",
+                                "source": source,
+                                "target": target,
+                                "value": 1,
+                            }
+                        }
+                    )
                 continue
 
             if relationship.get("relation") not in ("parent", "is_part_of"):
