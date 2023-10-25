@@ -4,7 +4,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [packages]
-Flask = "==2.0.3"
 Flask-Cors = "*"
 Flask-Dance = "*"
 Flask-Login = "*"
@@ -31,6 +30,7 @@ navani = {git = "git+https://github.com/the-grey-group/navani.git@v0.1.4"}
 python-dateutil = "*"
 pybaselines = "*"
 rosettasciio = "*"
+flask = "*"
 
 [dev-packages]
 pytest = "*"

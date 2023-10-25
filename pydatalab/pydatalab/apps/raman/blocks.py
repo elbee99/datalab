@@ -30,8 +30,11 @@ class RamanBlock(DataBlock):
         ext = os.path.splitext(location)[-1].lower()
 
         if ext == ".txt":
-            df = pd.read_csv(location, sep=r"\s+")
-            df = df.rename(columns={"#Wave": "wavenumber", "#Intensity": "intensity"})
+        # reading it to numpy and then pandas seems to be the easiest way to read both .txt file types
+            try:
+                df = pd.DataFrame(np.loadtxt(location), columns=['wavenumber', 'intensity'])
+            except UnicodeDecodeError:
+                df = pd.DataFrame(np.loadtxt(location, encoding='cp1252'), columns=['wavenumber', 'intensity'])
         elif ext == ".wdf":
             df = self.make_wdf_df(location)
 
@@ -120,69 +123,6 @@ class RamanBlock(DataBlock):
         df = pd.DataFrame({"wavenumber": wavenumbers, "intensity": intensity})
         return df
 
-    @classmethod
-    def make_wdf_df(self, location: Path | str) -> pd.DataFrame:
-        """Read the .wdf file with RosettaSciIO and try to extract
-        1D Raman spectra.
-
-        Parameters:
-            location: The location of the file to read.
-
-        Returns:
-            A dataframe with the appropriate columns.
-
-        """
-
-        raman_data = file_reader(location)
-
-        if len(raman_data[0]["axes"]) == 1:
-            pass
-        elif len(raman_data[0]["axes"]) == 3:
-            raise RuntimeError("This block does not support 2D Raman yet.")
-        else:
-            raise RuntimeError("Data is not compatible 1D or 2D Raman data.")
-
-        intensity = raman_data[0]["data"]
-        wavenumber_size = raman_data[0]["axes"][0]["size"]
-        wavenumber_offset = raman_data[0]["axes"][0]["offset"]
-        wavenumber_scale = raman_data[0]["axes"][0]["scale"]
-        wavenumbers = np.array(
-            [wavenumber_offset + i * wavenumber_scale for i in range(wavenumber_size)]
-        )
-        df = pd.DataFrame({"wavenumber": wavenumbers, "intensity": intensity})
-        return df
-
-    @classmethod
-    def make_wdf_df(self, location: Path | str) -> pd.DataFrame:
-        """Read the .wdf file with RosettaSciIO and try to extract
-        1D Raman spectra.
-
-        Parameters:
-            location: The location of the file to read.
-
-        Returns:
-            A dataframe with the appropriate columns.
-
-        """
-
-        raman_data = file_reader(location)
-
-        if len(raman_data[0]["axes"]) == 1:
-            pass
-        elif len(raman_data[0]["axes"]) == 3:
-            raise RuntimeError("This block does not support 2D Raman yet.")
-        else:
-            raise RuntimeError("Data is not compatible 1D or 2D Raman data.")
-
-        intensity = raman_data[0]["data"]
-        wavenumber_size = raman_data[0]["axes"][0]["size"]
-        wavenumber_offset = raman_data[0]["axes"][0]["offset"]
-        wavenumber_scale = raman_data[0]["axes"][0]["scale"]
-        wavenumbers = np.array(
-            [wavenumber_offset + i * wavenumber_scale for i in range(wavenumber_size)]
-        )
-        df = pd.DataFrame({"wavenumber": wavenumbers, "intensity": intensity})
-        return df
 
     def generate_raman_plot(self):
         file_info = None
